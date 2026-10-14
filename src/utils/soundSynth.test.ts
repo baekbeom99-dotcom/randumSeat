@@ -25,8 +25,10 @@ function createMockAudioContext(state: AudioContextState = 'running') {
         linearRampToValueAtTime: vi.fn(),
       },
       connect: vi.fn(),
+      disconnect: vi.fn(),
       start: vi.fn(),
       stop: vi.fn(),
+      onended: null as (() => void) | null,
     })),
     createGain: vi.fn(() => ({
       gain: {
@@ -36,6 +38,7 @@ function createMockAudioContext(state: AudioContextState = 'running') {
         linearRampToValueAtTime: vi.fn(),
       },
       connect: vi.fn(),
+      disconnect: vi.fn(),
     })),
   } as unknown as AudioContext;
 }
@@ -130,6 +133,11 @@ describe('soundSynth', () => {
       expect(gain.connect).toHaveBeenCalledWith(mockCtx.destination);
       expect(osc.start).toHaveBeenCalledWith(mockCtx.currentTime);
       expect(osc.stop).toHaveBeenCalledWith(mockCtx.currentTime + 0.03);
+
+      expect(typeof osc.onended).toBe('function');
+      osc.onended();
+      expect(osc.disconnect).toHaveBeenCalled();
+      expect(gain.disconnect).toHaveBeenCalled();
     });
 
     it('does not throw when an error occurs during audio node setup', () => {
@@ -252,5 +260,38 @@ describe('useSoundEffects', () => {
 
     expect(MockCtor).not.toHaveBeenCalled();
     expect(mockCtx.createOscillator).not.toHaveBeenCalled();
+  });
+
+  it('respects dynamic toggling of enabled prop via rerender', () => {
+    const mockCtx = createMockAudioContext();
+    (window as unknown as { AudioContext?: typeof AudioContext }).AudioContext = vi.fn().mockImplementation(() => mockCtx);
+
+    const { result, rerender } = renderHook(({ enabled }) => useSoundEffects(enabled), {
+      initialProps: { enabled: true },
+    });
+
+    act(() => {
+      result.current.playTick();
+    });
+    expect(mockCtx.createOscillator).toHaveBeenCalledTimes(1);
+
+    // Dynamic toggle to disabled
+    rerender({ enabled: false });
+
+    act(() => {
+      result.current.playTick();
+      result.current.playChime();
+      result.current.playFanfare();
+    });
+    // Count remains 1 since hook was muted
+    expect(mockCtx.createOscillator).toHaveBeenCalledTimes(1);
+
+    // Dynamic toggle back to enabled
+    rerender({ enabled: true });
+
+    act(() => {
+      result.current.playChime();
+    });
+    expect(mockCtx.createOscillator).toHaveBeenCalledTimes(2);
   });
 });

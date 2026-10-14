@@ -58,6 +58,13 @@ export function playTickSound(ctx: AudioContext): void {
     osc.connect(gain);
     gain.connect(ctx.destination);
 
+    osc.onended = () => {
+      try {
+        osc.disconnect();
+        gain.disconnect();
+      } catch {}
+    };
+
     osc.start(now);
     osc.stop(now + duration);
   } catch {
@@ -85,6 +92,13 @@ export function playChimeSound(ctx: AudioContext): void {
 
     osc.connect(gain);
     gain.connect(ctx.destination);
+
+    osc.onended = () => {
+      try {
+        osc.disconnect();
+        gain.disconnect();
+      } catch {}
+    };
 
     osc.start(now);
     osc.stop(now + duration);
@@ -121,6 +135,13 @@ export function playFanfareSound(ctx: AudioContext): void {
 
       osc.connect(gain);
       gain.connect(ctx.destination);
+
+      osc.onended = () => {
+        try {
+          osc.disconnect();
+          gain.disconnect();
+        } catch {}
+      };
 
       osc.start(startTime);
       osc.stop(stopTime);
