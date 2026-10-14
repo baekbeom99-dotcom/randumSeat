@@ -79,7 +79,7 @@ describe('useSeatLottery', () => {
 
       expect(result.current.status).toBe('completed');
       expect(result.current.revealedSeats.size).toBe(6);
-      expect(playChime).toHaveBeenCalledTimes(1);
+      expect(playChime).not.toHaveBeenCalled();
       expect(playFanfare).toHaveBeenCalledTimes(1);
       expect(onComplete).toHaveBeenCalledTimes(1);
 
@@ -331,6 +331,44 @@ describe('useSeatLottery', () => {
       });
       expect(result.current.status).toBe('completed');
       expect(onComplete).toHaveBeenCalledTimes(2);
+    });
+
+    it('immediately resets slot numbers and cleared state at t=0 when re-running startLottery', () => {
+      const { result } = renderHook(() =>
+        useSeatLottery({
+          totalStudents: 4,
+          totalGroups: 2,
+          mode: 'instant',
+          instantDurationMs: 500,
+        })
+      );
+
+      // Run to completion
+      act(() => {
+        result.current.startLottery();
+      });
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+      expect(result.current.status).toBe('completed');
+      expect(result.current.revealedSeats.size).toBe(4);
+
+      // Re-run startLottery
+      act(() => {
+        result.current.startLottery();
+      });
+
+      // At t=0 (no timer advanced)
+      expect(result.current.status).toBe('animating');
+      expect(result.current.revealedSeats.size).toBe(0);
+
+      // Check slot values are fresh random numbers (1..4) immediately seeded at t=0
+      const seatIds = result.current.groups.flatMap((g) => g.seats.map((s) => s.id));
+      expect(seatIds).toHaveLength(4);
+      seatIds.forEach((id) => {
+        expect(result.current.displaySlotValues[id]).toBeGreaterThanOrEqual(1);
+        expect(result.current.displaySlotValues[id]).toBeLessThanOrEqual(4);
+      });
     });
   });
 

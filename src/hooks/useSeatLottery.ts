@@ -99,12 +99,12 @@ export function useSeatLottery(options: UseSeatLotteryOptions): UseSeatLotteryRe
 
     clearTimers();
 
+    const totalStudents = optionsRef.current.totalStudents;
+    const totalGroups = optionsRef.current.totalGroups;
+
     let newGroups: Group[];
     try {
-      newGroups = allocateSeats(
-        optionsRef.current.totalStudents,
-        optionsRef.current.totalGroups
-      );
+      newGroups = allocateSeats(totalStudents, totalGroups);
     } catch {
       return;
     }
@@ -116,6 +116,13 @@ export function useSeatLottery(options: UseSeatLotteryOptions): UseSeatLotteryRe
     revealedSeatsRef.current = new Set();
     setRevealedSeats(new Set());
     lastTickSoundTimeRef.current = -Infinity;
+
+    // Immediately seed displaySlotValues with fresh random numbers at t=0
+    const initialSlotValues: Record<string, number> = {};
+    for (const seat of seats) {
+      initialSlotValues[seat.id] = Math.floor(Math.random() * totalStudents) + 1;
+    }
+    setDisplaySlotValues(initialSlotValues);
 
     statusRef.current = 'animating';
     setStatus('animating');
@@ -130,7 +137,7 @@ export function useSeatLottery(options: UseSeatLotteryOptions): UseSeatLotteryRe
 
     const tickInterval = optionsRef.current.tickIntervalMs ?? DEFAULT_TICK_INTERVAL_MS;
 
-    // Start rapid rolling ticker
+    // Start rapid rolling ticker using captured snapshot of totalStudents
     tickTimerRef.current = setInterval(() => {
       const now = Date.now();
       if (now - lastTickSoundTimeRef.current >= TICK_SOUND_THROTTLE_MS) {
@@ -148,9 +155,8 @@ export function useSeatLottery(options: UseSeatLotteryOptions): UseSeatLotteryRe
         }
 
         const next = { ...prev };
-        const total = optionsRef.current.totalStudents;
         for (const seat of unrevealedSeats) {
-          next[seat.id] = Math.floor(Math.random() * total) + 1;
+          next[seat.id] = Math.floor(Math.random() * totalStudents) + 1;
         }
         return next;
       });
@@ -180,7 +186,6 @@ export function useSeatLottery(options: UseSeatLotteryOptions): UseSeatLotteryRe
         statusRef.current = 'completed';
         setStatus('completed');
 
-        optionsRef.current.soundEffects?.playChime?.();
         optionsRef.current.soundEffects?.playFanfare?.();
         optionsRef.current.onComplete?.();
       }, duration);
