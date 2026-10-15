@@ -53,7 +53,9 @@ export async function exportSeatingAsPng(
     const link = document.createElement('a');
     link.download = filename || '우리반_자리배치표.png';
     link.href = dataUrl;
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
     return true;
   } catch (error) {
     console.error('Failed to export seating chart as PNG:', error);

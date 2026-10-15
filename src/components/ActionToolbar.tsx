@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { RotateCcw, Printer, Download, PartyPopper, Loader2 } from 'lucide-react';
 import { triggerConfetti, exportSeatingAsPng, printSeating } from '../utils/exportUtils';
+import { LotteryStatus } from '../hooks/useSeatLottery';
 
 export interface ActionToolbarProps {
   onReshuffle: () => void;
   isAnimating: boolean;
-  status: 'idle' | 'animating' | 'completed';
+  status: LotteryStatus;
   targetRef: React.RefObject<HTMLElement | null>;
 }
 
@@ -71,6 +72,7 @@ export const ActionToolbar: React.FC<ActionToolbarProps> = ({
         type="button"
         onClick={handleExportPng}
         disabled={isExportDisabled}
+        aria-busy={isExporting}
         aria-label="자리 배치표 이미지(PNG) 저장"
         title="자리 배치표를 고화질 PNG 이미지로 저장합니다"
         className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"

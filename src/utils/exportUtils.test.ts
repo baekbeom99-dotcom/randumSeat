@@ -55,28 +55,14 @@ describe('exportUtils', () => {
       const fakeDataUrl = 'data:image/png;base64,fakeimagecontent';
       vi.mocked(toPng).mockResolvedValueOnce(fakeDataUrl);
 
-      const mockClick = vi.fn();
-      let href = '';
-      let download = '';
-      const mockAnchor = {
-        set href(val: string) {
-          href = val;
-        },
-        get href() {
-          return href;
-        },
-        set download(val: string) {
-          download = val;
-        },
-        get download() {
-          return download;
-        },
-        click: mockClick,
-      } as unknown as HTMLAnchorElement;
+      const realAnchor = originalCreateElement('a');
+      const mockClick = vi.spyOn(realAnchor, 'click').mockImplementation(() => {});
+      const appendChildSpy = vi.spyOn(document.body, 'appendChild');
+      const removeChildSpy = vi.spyOn(document.body, 'removeChild');
 
       vi.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
         if (tagName.toLowerCase() === 'a') {
-          return mockAnchor;
+          return realAnchor;
         }
         return originalCreateElement(tagName);
       });
@@ -88,25 +74,23 @@ describe('exportUtils', () => {
         backgroundColor: '#ffffff',
         pixelRatio: 2,
       });
-      expect(mockAnchor.download).toBe('우리반_자리배치표.png');
-      expect(mockAnchor.href).toBe(fakeDataUrl);
+      expect(realAnchor.download).toBe('우리반_자리배치표.png');
+      expect(realAnchor.href).toBe(fakeDataUrl);
+      expect(appendChildSpy).toHaveBeenCalledWith(realAnchor);
       expect(mockClick).toHaveBeenCalledTimes(1);
+      expect(removeChildSpy).toHaveBeenCalledWith(realAnchor);
     });
 
     it('uses custom filename when provided', async () => {
       const mockElement = document.createElement('div');
       vi.mocked(toPng).mockResolvedValueOnce('data:image/png;base64,custom');
 
-      const mockClick = vi.fn();
-      const mockAnchor = {
-        click: mockClick,
-        href: '',
-        download: '',
-      } as unknown as HTMLAnchorElement;
+      const realAnchor = originalCreateElement('a');
+      vi.spyOn(realAnchor, 'click').mockImplementation(() => {});
 
       vi.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
         if (tagName.toLowerCase() === 'a') {
-          return mockAnchor;
+          return realAnchor;
         }
         return originalCreateElement(tagName);
       });
@@ -114,7 +98,7 @@ describe('exportUtils', () => {
       const result = await exportSeatingAsPng(mockElement, 'custom_chart.png');
 
       expect(result).toBe(true);
-      expect(mockAnchor.download).toBe('custom_chart.png');
+      expect(realAnchor.download).toBe('custom_chart.png');
     });
 
     it('returns false and catches errors if toPng fails', async () => {

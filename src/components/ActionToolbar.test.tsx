@@ -169,6 +169,7 @@ describe('ActionToolbar', () => {
 
       // Should be disabled and in loading state while waiting
       expect(exportButton).toBeDisabled();
+      expect(exportButton).toHaveAttribute('aria-busy', 'true');
       expect(screen.getByText(/저장 중/i)).toBeInTheDocument();
 
       // Resolve export
@@ -176,6 +177,7 @@ describe('ActionToolbar', () => {
       await waitFor(() => {
         expect(screen.queryByText(/저장 중/i)).not.toBeInTheDocument();
         expect(exportButton).toBeEnabled();
+        expect(exportButton).toHaveAttribute('aria-busy', 'false');
       });
     });
   });
