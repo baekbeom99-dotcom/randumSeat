@@ -41,7 +41,13 @@ export const HeaderControlBar: React.FC<HeaderControlBarProps> = ({
   onStartLottery,
   isAnimating,
 }) => {
-  const isInvalid = totalStudents < totalGroups;
+  const isStudentLessThanGroup = totalStudents < totalGroups;
+  const isOutOfBounds =
+    totalStudents < 2 ||
+    totalStudents > 60 ||
+    totalGroups < 1 ||
+    totalGroups > 15;
+  const isInvalid = isStudentLessThanGroup || isOutOfBounds;
 
   const handleStudentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseInt(e.target.value, 10);
@@ -50,10 +56,24 @@ export const HeaderControlBar: React.FC<HeaderControlBarProps> = ({
     }
   };
 
+  const handleStudentBlur = () => {
+    const clamped = Math.min(60, Math.max(2, totalStudents || 2));
+    if (clamped !== totalStudents) {
+      onTotalStudentsChange(clamped);
+    }
+  };
+
   const handleGroupChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseInt(e.target.value, 10);
     if (!isNaN(val)) {
       onTotalGroupsChange(val);
+    }
+  };
+
+  const handleGroupBlur = () => {
+    const clamped = Math.min(15, Math.max(1, totalGroups || 1));
+    if (clamped !== totalGroups) {
+      onTotalGroupsChange(clamped);
     }
   };
 
@@ -105,7 +125,7 @@ export const HeaderControlBar: React.FC<HeaderControlBarProps> = ({
                   disabled={isAnimating || totalStudents <= 2}
                   className="w-7 h-7 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition"
                 >
-                  <Minus className="w-3.5 h-3.5" />
+                  <Minus className="w-3.5 h-3.5" aria-hidden="true" />
                 </button>
                 <input
                   id="total-students"
@@ -115,6 +135,7 @@ export const HeaderControlBar: React.FC<HeaderControlBarProps> = ({
                   max={60}
                   value={totalStudents}
                   onChange={handleStudentChange}
+                  onBlur={handleStudentBlur}
                   disabled={isAnimating}
                   className="w-12 text-center font-bold text-slate-800 bg-transparent focus:outline-none focus:ring-1 focus:ring-indigo-500 rounded"
                 />
@@ -125,7 +146,7 @@ export const HeaderControlBar: React.FC<HeaderControlBarProps> = ({
                   disabled={isAnimating || totalStudents >= 60}
                   className="w-7 h-7 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-3.5 h-3.5" aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -146,7 +167,7 @@ export const HeaderControlBar: React.FC<HeaderControlBarProps> = ({
                   disabled={isAnimating || totalGroups <= 1}
                   className="w-7 h-7 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition"
                 >
-                  <Minus className="w-3.5 h-3.5" />
+                  <Minus className="w-3.5 h-3.5" aria-hidden="true" />
                 </button>
                 <input
                   id="total-groups"
@@ -156,6 +177,7 @@ export const HeaderControlBar: React.FC<HeaderControlBarProps> = ({
                   max={15}
                   value={totalGroups}
                   onChange={handleGroupChange}
+                  onBlur={handleGroupBlur}
                   disabled={isAnimating}
                   className="w-12 text-center font-bold text-slate-800 bg-transparent focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded"
                 />
@@ -166,7 +188,7 @@ export const HeaderControlBar: React.FC<HeaderControlBarProps> = ({
                   disabled={isAnimating || totalGroups >= 15}
                   className="w-7 h-7 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-3.5 h-3.5" aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -176,6 +198,7 @@ export const HeaderControlBar: React.FC<HeaderControlBarProps> = ({
           <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-inner">
             <button
               type="button"
+              aria-pressed={mode === 'sequential'}
               onClick={() => onModeChange('sequential')}
               disabled={isAnimating}
               className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
@@ -188,6 +211,7 @@ export const HeaderControlBar: React.FC<HeaderControlBarProps> = ({
             </button>
             <button
               type="button"
+              aria-pressed={mode === 'instant'}
               onClick={() => onModeChange('instant')}
               disabled={isAnimating}
               className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
@@ -215,9 +239,9 @@ export const HeaderControlBar: React.FC<HeaderControlBarProps> = ({
               }`}
             >
               {soundEnabled ? (
-                <Volume2 className="w-5 h-5" />
+                <Volume2 className="w-5 h-5" aria-hidden="true" />
               ) : (
-                <VolumeX className="w-5 h-5" />
+                <VolumeX className="w-5 h-5" aria-hidden="true" />
               )}
             </button>
 
@@ -234,9 +258,9 @@ export const HeaderControlBar: React.FC<HeaderControlBarProps> = ({
               }`}
             >
               {isFullscreen ? (
-                <Minimize className="w-5 h-5" />
+                <Minimize className="w-5 h-5" aria-hidden="true" />
               ) : (
-                <Maximize className="w-5 h-5" />
+                <Maximize className="w-5 h-5" aria-hidden="true" />
               )}
             </button>
 
@@ -253,6 +277,7 @@ export const HeaderControlBar: React.FC<HeaderControlBarProps> = ({
             >
               <Sparkles
                 className={`w-5 h-5 ${isAnimating ? 'animate-spin' : ''}`}
+                aria-hidden="true"
               />
               <span>자리 뽑기 시작!</span>
             </button>
@@ -266,8 +291,15 @@ export const HeaderControlBar: React.FC<HeaderControlBarProps> = ({
             role="alert"
             className="mt-3 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium animate-fadeIn"
           >
-            <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-            <span>학생 수가 모둠 수 이상이어야 자리를 나눌 수 있어요!</span>
+            <AlertCircle
+              className="w-4 h-4 text-amber-600 flex-shrink-0"
+              aria-hidden="true"
+            />
+            <span>
+              {isOutOfBounds
+                ? '학생 수는 2~60명, 모둠 수는 1~15개 범위 내에서 설정해 주세요!'
+                : '학생 수가 모둠 수 이상이어야 자리를 나눌 수 있어요!'}
+            </span>
           </div>
         )}
       </div>

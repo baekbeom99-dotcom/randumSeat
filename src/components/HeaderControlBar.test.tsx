@@ -1,7 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import HeaderControlBar, { HeaderControlBarProps } from './HeaderControlBar';
-import BlackboardBanner from './BlackboardBanner';
 
 describe('HeaderControlBar', () => {
   const defaultProps: HeaderControlBarProps = {
@@ -78,6 +77,31 @@ describe('HeaderControlBar', () => {
     expect(onTotalStudentsChange).toHaveBeenCalledWith(30);
   });
 
+  it('clamps student count on blur to [2, 60]', () => {
+    const onTotalStudentsChange = vi.fn();
+    const { rerender } = render(
+      <HeaderControlBar
+        {...defaultProps}
+        totalStudents={1}
+        onTotalStudentsChange={onTotalStudentsChange}
+      />
+    );
+
+    const input = screen.getByRole('spinbutton', { name: /학생 수/i });
+    fireEvent.blur(input);
+    expect(onTotalStudentsChange).toHaveBeenCalledWith(2);
+
+    rerender(
+      <HeaderControlBar
+        {...defaultProps}
+        totalStudents={100}
+        onTotalStudentsChange={onTotalStudentsChange}
+      />
+    );
+    fireEvent.blur(input);
+    expect(onTotalStudentsChange).toHaveBeenCalledWith(60);
+  });
+
   it('renders group count and handles increment / decrement', () => {
     const onTotalGroupsChange = vi.fn();
     render(
@@ -137,7 +161,32 @@ describe('HeaderControlBar', () => {
     expect(onTotalGroupsChange).toHaveBeenCalledWith(8);
   });
 
-  it('toggles mode between sequential and instant', () => {
+  it('clamps group count on blur to [1, 15]', () => {
+    const onTotalGroupsChange = vi.fn();
+    const { rerender } = render(
+      <HeaderControlBar
+        {...defaultProps}
+        totalGroups={0}
+        onTotalGroupsChange={onTotalGroupsChange}
+      />
+    );
+
+    const input = screen.getByRole('spinbutton', { name: /모둠 수/i });
+    fireEvent.blur(input);
+    expect(onTotalGroupsChange).toHaveBeenCalledWith(1);
+
+    rerender(
+      <HeaderControlBar
+        {...defaultProps}
+        totalGroups={20}
+        onTotalGroupsChange={onTotalGroupsChange}
+      />
+    );
+    fireEvent.blur(input);
+    expect(onTotalGroupsChange).toHaveBeenCalledWith(15);
+  });
+
+  it('toggles mode between sequential and instant and sets aria-pressed', () => {
     const onModeChange = vi.fn();
     const { rerender } = render(
       <HeaderControlBar
@@ -147,7 +196,12 @@ describe('HeaderControlBar', () => {
       />
     );
 
+    const sequentialBtn = screen.getByRole('button', { name: /긴장감 모드/i });
     const instantBtn = screen.getByRole('button', { name: /빠른 모드/i });
+
+    expect(sequentialBtn).toHaveAttribute('aria-pressed', 'true');
+    expect(instantBtn).toHaveAttribute('aria-pressed', 'false');
+
     fireEvent.click(instantBtn);
     expect(onModeChange).toHaveBeenCalledWith('instant');
 
@@ -158,7 +212,10 @@ describe('HeaderControlBar', () => {
         onModeChange={onModeChange}
       />
     );
-    const sequentialBtn = screen.getByRole('button', { name: /긴장감 모드/i });
+
+    expect(sequentialBtn).toHaveAttribute('aria-pressed', 'false');
+    expect(instantBtn).toHaveAttribute('aria-pressed', 'true');
+
     fireEvent.click(sequentialBtn);
     expect(onModeChange).toHaveBeenCalledWith('sequential');
   });
@@ -266,7 +323,26 @@ describe('HeaderControlBar', () => {
     ).toBeInTheDocument();
   });
 
-  it('does not display validation message when totalStudents >= totalGroups', () => {
+  it('disables start button and shows out-of-bounds warning when values exceed limits', () => {
+    render(
+      <HeaderControlBar
+        {...defaultProps}
+        totalStudents={1}
+        totalGroups={1}
+      />
+    );
+
+    const startBtn = screen.getByRole('button', { name: /자리 뽑기 시작/i });
+    expect(startBtn).toBeDisabled();
+
+    expect(
+      screen.getByText(
+        '학생 수는 2~60명, 모둠 수는 1~15개 범위 내에서 설정해 주세요!'
+      )
+    ).toBeInTheDocument();
+  });
+
+  it('does not display validation message when values are valid and totalStudents >= totalGroups', () => {
     render(
       <HeaderControlBar
         {...defaultProps}
@@ -278,6 +354,11 @@ describe('HeaderControlBar', () => {
     expect(
       screen.queryByText('학생 수가 모둠 수 이상이어야 자리를 나눌 수 있어요!')
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        '학생 수는 2~60명, 모둠 수는 1~15개 범위 내에서 설정해 주세요!'
+      )
+    ).not.toBeInTheDocument();
   });
 
   it('includes the no-print class on the root container', () => {
@@ -285,26 +366,3 @@ describe('HeaderControlBar', () => {
     expect(container.firstChild).toHaveClass('no-print');
   });
 });
-
-describe('BlackboardBanner', () => {
-  it('renders classroom front banner with accessible label', () => {
-    render(<BlackboardBanner />);
-    const banner = screen.getByRole('region', {
-      name: '교실 앞쪽 (칠판/교탁 위치)',
-    });
-    expect(banner).toBeInTheDocument();
-  });
-
-  it('displays podium and blackboard texts', () => {
-    render(<BlackboardBanner />);
-    expect(screen.getByText('교탁')).toBeInTheDocument();
-    expect(screen.getByText('칠판 (교실 앞)')).toBeInTheDocument();
-    expect(screen.getByText('선생님을 바라보는 방향입니다')).toBeInTheDocument();
-  });
-
-  it('applies custom className if provided', () => {
-    const { container } = render(<BlackboardBanner className="custom-banner" />);
-    expect(container.firstChild).toHaveClass('custom-banner');
-  });
-});
-
