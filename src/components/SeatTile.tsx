@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Sparkles, Check } from 'lucide-react';
 
 export interface SeatTileProps {
@@ -8,7 +9,7 @@ export interface SeatTileProps {
   isAnimating: boolean;
 }
 
-export default function SeatTile({
+const SeatTile = memo(function SeatTile({
   seatId,
   seatIndex,
   displayValue,
@@ -90,4 +91,6 @@ export default function SeatTile({
       </div>
     </div>
   );
-}
+});
+
+export default SeatTile;

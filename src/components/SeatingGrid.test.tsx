@@ -155,6 +155,33 @@ describe('GroupCard', () => {
     const card2 = c2.firstChild as HTMLElement;
     expect(card1.className).not.toEqual(card2.className);
   });
+  it('uses accessible section with aria-labelledby and handles single seat layout with grid-cols-1', () => {
+    const singleSeatGroup: Group = {
+      id: 5,
+      name: '5모둠',
+      seats: [{ id: 'g5-s1', studentNumber: 1 }],
+    };
+
+    const { container } = render(
+      <GroupCard
+        group={singleSeatGroup}
+        displaySlotValues={{ 'g5-s1': 1 }}
+        revealedSeats={new Set(['g5-s1'])}
+        isAnimating={false}
+      />
+    );
+
+    const sectionEl = screen.getByRole('region', { name: '5모둠' });
+    expect(sectionEl).toBeInTheDocument();
+    expect(sectionEl).toHaveAttribute('aria-labelledby', 'group-title-5');
+
+    const titleEl = screen.getByText('5모둠');
+    expect(titleEl).toHaveAttribute('id', 'group-title-5');
+
+    // Single seat grid container should contain grid-cols-1
+    const gridContainer = container.querySelector('.grid');
+    expect(gridContainer?.className).toContain('grid-cols-1');
+  });
 });
 
 describe('SeatingGrid', () => {
@@ -234,52 +261,88 @@ describe('SeatingGrid', () => {
   });
 
   it('applies responsive column classes based on group count', () => {
-    const { container: container2, rerender } = render(
+    const createGroups = (count: number): Group[] =>
+      Array.from({ length: count }, (_, i) => ({
+        id: i + 1,
+        name: `${i + 1}모둠`,
+        seats: [{ id: `g${i + 1}-s1`, studentNumber: i + 1 }],
+      }));
+
+    // 1 group
+    const { container, rerender } = render(
       <SeatingGrid
-        groups={sampleGroups} // 2 groups
+        groups={createGroups(1)}
         displaySlotValues={{}}
         revealedSeats={new Set()}
         isAnimating={false}
       />
     );
+    expect(container.querySelector('[data-testid="seating-grid"]')?.className).toContain('grid-cols-1 max-w-md');
 
-    const gridEl2 = container2.querySelector('[data-testid="seating-grid"]');
-    expect(gridEl2?.className).toMatch(/grid-cols-1.*sm:grid-cols-2/);
-
-    const fourGroups: Group[] = Array.from({ length: 4 }, (_, i) => ({
-      id: i + 1,
-      name: `${i + 1}모둠`,
-      seats: [{ id: `g${i + 1}-s1`, studentNumber: i + 1 }],
-    }));
-
+    // 2 groups
     rerender(
       <SeatingGrid
-        groups={fourGroups}
+        groups={createGroups(2)}
         displaySlotValues={{}}
         revealedSeats={new Set()}
         isAnimating={false}
       />
     );
+    expect(container.querySelector('[data-testid="seating-grid"]')?.className).toContain('grid-cols-1 sm:grid-cols-2 max-w-3xl');
 
-    const gridEl4 = container2.querySelector('[data-testid="seating-grid"]');
-    expect(gridEl4?.className).toMatch(/grid-cols/);
-
-    const sixGroups: Group[] = Array.from({ length: 6 }, (_, i) => ({
-      id: i + 1,
-      name: `${i + 1}모둠`,
-      seats: [{ id: `g${i + 1}-s1`, studentNumber: i + 1 }],
-    }));
-
+    // 3 groups: md:grid-cols-3
     rerender(
       <SeatingGrid
-        groups={sixGroups}
+        groups={createGroups(3)}
         displaySlotValues={{}}
         revealedSeats={new Set()}
         isAnimating={false}
       />
     );
+    expect(container.querySelector('[data-testid="seating-grid"]')?.className).toContain('md:grid-cols-3 max-w-5xl');
 
-    const gridEl6 = container2.querySelector('[data-testid="seating-grid"]');
-    expect(gridEl6?.className).toMatch(/grid-cols/);
+    // 4 groups: lg:grid-cols-4
+    rerender(
+      <SeatingGrid
+        groups={createGroups(4)}
+        displaySlotValues={{}}
+        revealedSeats={new Set()}
+        isAnimating={false}
+      />
+    );
+    expect(container.querySelector('[data-testid="seating-grid"]')?.className).toContain('lg:grid-cols-4 max-w-6xl');
+
+    // 6 groups: xl:grid-cols-6
+    rerender(
+      <SeatingGrid
+        groups={createGroups(6)}
+        displaySlotValues={{}}
+        revealedSeats={new Set()}
+        isAnimating={false}
+      />
+    );
+    expect(container.querySelector('[data-testid="seating-grid"]')?.className).toContain('xl:grid-cols-6 max-w-7xl');
+
+    // 8 groups: lg:grid-cols-4
+    rerender(
+      <SeatingGrid
+        groups={createGroups(8)}
+        displaySlotValues={{}}
+        revealedSeats={new Set()}
+        isAnimating={false}
+      />
+    );
+    expect(container.querySelector('[data-testid="seating-grid"]')?.className).toContain('lg:grid-cols-4 max-w-7xl');
+
+    // 9 groups: xl:grid-cols-5
+    rerender(
+      <SeatingGrid
+        groups={createGroups(9)}
+        displaySlotValues={{}}
+        revealedSeats={new Set()}
+        isAnimating={false}
+      />
+    );
+    expect(container.querySelector('[data-testid="seating-grid"]')?.className).toContain('xl:grid-cols-5 max-w-7xl');
   });
 });

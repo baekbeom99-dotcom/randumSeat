@@ -77,9 +77,12 @@ export default function GroupCard({
   const paletteIndex = ((group.id - 1) % PALETTES.length + PALETTES.length) % PALETTES.length;
   const palette = PALETTES[paletteIndex];
 
+  const isSingleSeat = group.seats.length === 1;
+
   return (
-    <div
+    <section
       data-testid={`group-card-${group.id}`}
+      aria-labelledby={`group-title-${group.id}`}
       className={`flex flex-col rounded-2xl border-2 p-3 sm:p-4 shadow-md transition-all duration-200 ${palette.cardBorder} ${palette.cardBg}`}
     >
       {/* Header with group title and member count badge */}
@@ -89,7 +92,10 @@ export default function GroupCard({
             className={`w-3 h-3 rounded-full ${palette.accentDot}`}
             aria-hidden="true"
           />
-          <h3 className={`text-base sm:text-lg font-bold tracking-tight ${palette.title}`}>
+          <h3
+            id={`group-title-${group.id}`}
+            className={`text-base sm:text-lg font-bold tracking-tight ${palette.title}`}
+          >
             {group.name}
           </h3>
         </div>
@@ -102,7 +108,11 @@ export default function GroupCard({
       </div>
 
       {/* Classroom Desk Formation (Pair/Grid layout) */}
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 flex-1 items-stretch">
+      <div
+        className={`grid ${
+          isSingleSeat ? 'grid-cols-1 max-w-[200px] mx-auto w-full' : 'grid-cols-2'
+        } gap-2.5 sm:gap-3 flex-1 items-stretch`}
+      >
         {group.seats.map((seat, index) => (
           <SeatTile
             key={seat.id}
@@ -114,6 +124,6 @@ export default function GroupCard({
           />
         ))}
       </div>
-    </div>
+    </section>
   );
 }
